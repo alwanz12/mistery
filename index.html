@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uji Keberanian - Temukan Misterinya</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Courier Prime', monospace;
+            background-color: #030305;
+            color: #d1d5db;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .font-horror {
+            font-family: 'Creepster', cursive;
+            letter-spacing: 2px;
+        }
+
+        /* Screen Shake Animation */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        .shake-active {
+            animation: shake 0.15s infinite;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+
+    <!-- FAKE LOADING SCREEN -->
+    <div id="loadingScreen" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center p-6 text-center">
+        <div class="w-16 h-16 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <h2 id="loadingText" class="text-red-600 font-horror text-2xl tracking-widest mb-2">MENYIAPKAN FILE INVESTIGASI...</h2>
+        <p class="text-xs text-zinc-500">Pastikan volume perangkat Anda dalam keadaan aktif untuk pengalaman terbaik.</p>
+        <button onclick="startExperience()" class="mt-8 px-6 py-3 bg-red-900/40 hover:bg-red-800 text-red-500 hover:text-white border border-red-700/60 rounded-xl font-bold tracking-wider transition-all shadow-lg">
+            MASUK KE SITUS ⚠️
+        </button>
+    </div>
+
+    <!-- MAIN PAGE CONTAINER (KONTEN UTAMA) -->
+    <div id="mainContainer" class="w-full max-w-lg bg-zinc-900/80 border border-zinc-800 rounded-2xl p-6 text-center relative shadow-2xl backdrop-blur-md hidden">
+        <div class="absolute top-3 right-3 text-zinc-600 text-xs">LOG #404</div>
+        
+        <div class="w-20 h-20 bg-red-950/40 border border-red-900/50 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500 shadow-inner">
+            <i class="fa-solid fa-ghost text-3xl animate-pulse"></i>
+        </div>
+
+        <h1 id="pageTitle" class="text-3xl font-horror text-red-600 mb-2 drop-shadow-md">ARSIP MISTERI TERSEMBUNYI</h1>
+        <p id="pageSubtitle" class="text-xs text-zinc-400 mb-6 leading-relaxed"></p>
+
+        <!-- Kotak Interaksi / Cerita -->
+        <div class="bg-black/60 border border-zinc-800 rounded-xl p-4 mb-6 text-left text-xs text-zinc-300 font-mono leading-relaxed">
+            <p id="storyText" class="mb-2"></p>
+            <p class="text-red-500 font-bold animate-pulse" id="warningText"></p>
+        </div>
+
+        <!-- Tombol Pemicu Jumpscare -->
+        <button onclick="triggerJumpscare()" class="w-full py-3.5 bg-gradient-to-r from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 text-white font-bold text-sm rounded-xl shadow-lg transition-all tracking-wider border border-red-500/40">
+            <i class="fa-solid fa-eye mr-2"></i> <span id="buttonText">BUKA FILE RAHASIA SEKARANG</span>
+        </button>
+
+        <p class="text-[10px] text-zinc-600 mt-4">Peringatan: Mengandung konten visual mendadak dan suara keras.</p>
+    </div>
+
+    <!-- JUMPSCARE FULLSCREEN OVERLAY -->
+    <div id="jumpscareScreen" class="fixed inset-0 bg-black z-50 flex items-center justify-center hidden">
+        <img id="jumpscareImg" src="" alt="Jumpscare" class="w-full h-full object-cover">
+    </div>
+
+    <!-- AUDIO ELEMENT -->
+    <audio id="scareAudio" preload="auto"></audio>
+
+    <!-- SCRIPT KONFIGURASI DAN LOGIKA -->
+    <script>
+        // =========================================================================
+        // UBAH GAMBAR, SUARA, DAN TEKS DI BAGIAN INI
+        // =========================================================================
+        const JUMPSCARE_CONFIG = {
+            // 1. URL GAMBAR HANTU / MONSTER (Bisa link gambar online atau nama file lokal 'hantu.jpg')
+            imageUrl: "https://cdn.phototourl.com/member/2026-11-03-32529272-6058-4994-bd1d-cfabd5b963fc.jpg",
+
+            // 2. URL SUARA TERIAKAN / SCREAMER (Bisa link MP3 online atau file lokal 'screamer.mp3')
+            audioUrl: "https://www.myinstants.com/media/sounds/horror-scream.mp3",
+
+            // 3. DURASI JUMPSCARE (Dalam milidetik, contoh: 3000 = 3 detik)
+            durationMs: 3500,
+
+            // 4. TEKS HALAMAN WEB (Kamu bisa menyamar menjadi artikel, kuis, atau berita agar korban tidak curiga)
+            title: "ARSIP INVESTIGASI ANKER",
+            subtitle: "Dokumen rahasia mengenai rekaman suara dan penampakan di sebuah rumah kosong.",
+            story: "Pada tanggal 13 Oktober, sebuah tim peneliti menemukan file ini di dalam laptop tua yang ditinggalkan di lantai 3. Konon, siapa pun yang membuka dokumen ini dalam kegelapan akan merasakan kehadiran seseorang di belakang mereka...",
+            warningText: "PERINGATAN: Perhatikan baik-baik sudut layar pada detik ke-5...",
+            buttonText: "AMATI REKAMAN KAMERA"
+        };
+
+        // =========================================================================
+        // LOGIKA SISTEM (TIDAK PERLU DIUBAH)
+        // =========================================================================
+        const audio = document.getElementById("scareAudio");
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // Terapkan konfigurasi teks ke HTML
+            document.getElementById("pageTitle").innerText = JUMPSCARE_CONFIG.title;
+            document.getElementById("pageSubtitle").innerText = JUMPSCARE_CONFIG.subtitle;
+            document.getElementById("storyText").innerText = JUMPSCARE_CONFIG.story;
+            document.getElementById("warningText").innerText = JUMPSCARE_CONFIG.warningText;
+            document.getElementById("buttonText").innerText = JUMPSCARE_CONFIG.buttonText;
+
+            // Set media sumber
+            document.getElementById("jumpscareImg").src = JUMPSCARE_CONFIG.imageUrl;
+            audio.src = JUMPSCARE_CONFIG.audioUrl;
+        });
+
+        // Memulai pengalaman (menghilangkan loading screen agar audio siap dimainkan browser)
+        function startExperience() {
+            document.getElementById("loadingScreen").classList.add("hidden");
+            document.getElementById("mainContainer").classList.remove("hidden");
+            
+            // Dummy play untuk mengaktifkan izin pemutaran audio browser
+            audio.play().then(() => {
+                audio.pause();
+                audio.currentTime = 0;
+            }).catch(() => {});
+        }
+
+        // Fungsi Utama Jumpscare
+        function triggerJumpscare() {
+            const jumpscareScreen = document.getElementById("jumpscareScreen");
+            const body = document.body;
+
+            // 1. Tampilkan layar jumpscare & aktifkan getaran layar (screen shake)
+            jumpscareScreen.classList.remove("hidden");
+            body.classList.add("shake-active");
+
+            // 2. Putar suara teriakan seram dengan volume penuh
+            audio.currentTime = 0;
+            audio.volume = 1.0;
+            audio.play().catch(err => console.log("Audio terblokir browser:", err));
+
+            // 3. Kembalikan ke halaman semula setelah durasi habis
+            setTimeout(() => {
+                jumpscareScreen.classList.add("hidden");
+                body.classList.remove("shake-active");
+                audio.pause();
+                
+                // Opsional: Redirect atau memunculkan pesan candaan setelah dikagetkan
+                alert("Wkwk kaget ya? 👻 Berhasil nge-prank!");
+                location.reload();
+            }, JUMPSCARE_CONFIG.durationMs);
+        }
+    </script>
+</body>
+</html>
